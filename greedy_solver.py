@@ -55,7 +55,6 @@ def greedy_solver(
 
     solution: list[Route] = []
     while customers:
-        # next_customer: Customer = customers.pop()
         next_customer: Optional[Customer] = None
         route_time = 0
         route_capacity = 0
@@ -76,7 +75,14 @@ def greedy_solver(
             possible_next = sorted([
                     i
                     for i in customers
-                    if i.ready_time <= route_time + math.ceil(calculate_distance(next_customer, route[-1])) <= i.due_date
+                    if (
+                        i.ready_time
+                        <= route_time
+                        + math.ceil(calculate_distance(next_customer, route[-1]))
+                        + next_customer.service_time
+                        + math.ceil(calculate_distance(i, route[-1]))
+                        <= i.due_date
+                    )
                 ],
                 key=lambda x: (
                     depot.due_date - x.ready_time,
