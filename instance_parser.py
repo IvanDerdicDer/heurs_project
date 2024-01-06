@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import re
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class Customer:
     number: int
     x: int
@@ -13,7 +13,7 @@ class Customer:
     service_time: int
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class Instance:
     vehicle_count: int
     vehicle_capacity: int
