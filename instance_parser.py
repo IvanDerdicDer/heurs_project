@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 
 
 @dataclass
@@ -14,6 +15,24 @@ class Customer:
 
 @dataclass
 class Instance:
-    vehicle_number: int
+    vehicle_count: int
     vehicle_capacity: int
     customers: list[Customer]
+
+
+def parse_instance(path: str) -> Instance:
+    with open(path, "r") as f:
+        lines = [i.strip() for i in f.readlines()]
+
+    vehicle_count, vehicle_capacity = (int(i) for i in re.split(r' +', lines[2]))
+
+    customers = [
+        Customer(*(int(j) for j in re.split(r' +', i)))
+        for i in lines[7:]
+    ]
+
+    return Instance(
+        vehicle_count=vehicle_count,
+        vehicle_capacity=vehicle_capacity,
+        customers=customers
+    )
