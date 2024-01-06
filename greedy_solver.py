@@ -63,6 +63,7 @@ def greedy_solver(
             route_capacity += next_customer.demand
             route_time += next_customer.service_time
 
+        route = [depot] + route + [depot]
         solution.append(Route(route))
 
     return Solution(solution)
