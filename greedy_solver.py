@@ -12,6 +12,7 @@ class Route:
     route: list[Customer]
     distance: float
     time: int
+    capacity: int
 
 
 @dataclass
@@ -78,7 +79,8 @@ def greedy_solver(
         solution.append(Route(
             route,
             sum(calculate_distance(*i) for i in pairwise(route)),
-            sum(i.service_time for i in route)
+            sum(i.service_time for i in route),
+            sum(i.demand for i in route),
         ))
 
     return Solution(

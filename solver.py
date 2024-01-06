@@ -1,4 +1,5 @@
-from greedy_solver import Solution
+from greedy_solver import Solution, greedy_solver
+from instance_parser import parse_instance
 
 
 def cost_function(
@@ -9,3 +10,8 @@ def cost_function(
     cost -= sum(i.distance for i in solution.routes)
 
     return cost
+
+
+instance = parse_instance("instances/inst1.TXT")
+solution = greedy_solver(instance)
+pass
