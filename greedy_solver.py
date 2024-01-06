@@ -2,6 +2,7 @@ import math
 from collections import deque
 from copy import copy
 from dataclasses import dataclass
+from itertools import pairwise
 
 from instance_parser import Instance, Customer
 
@@ -9,15 +10,25 @@ from instance_parser import Instance, Customer
 @dataclass
 class Route:
     route: list[Customer]
+    distance: float
+    time: int
 
 
 @dataclass
 class Solution:
     routes: list[Route]
+    vehicle_count: int
 
 
 class TooManyVehiclesException(Exception):
     pass
+
+
+def calculate_distance(
+        c1: Customer,
+        c2: Customer
+) -> float:
+    return math.sqrt((c1.x - c2.x) ** 2 + (c1.y - c2.y) ** 2)
 
 
 def greedy_solver(
@@ -64,6 +75,13 @@ def greedy_solver(
             route_time += next_customer.service_time
 
         route = [depot] + route + [depot]
-        solution.append(Route(route))
+        solution.append(Route(
+            route,
+            sum(calculate_distance(*i) for i in pairwise(route)),
+            sum(i.service_time for i in route)
+        ))
 
-    return Solution(solution)
+    return Solution(
+        solution,
+        len(solution)
+    )
