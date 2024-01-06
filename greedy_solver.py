@@ -3,6 +3,7 @@ from collections import deque
 from copy import copy
 from dataclasses import dataclass
 from itertools import pairwise
+from typing import Optional
 
 from instance_parser import Instance, Customer
 
@@ -19,6 +20,9 @@ class Route:
 class Solution:
     routes: list[Route]
     vehicle_count: int
+
+    def __contains__(self, item: Customer) -> bool:
+        return any(item in i.route for i in self.routes)
 
 
 class TooManyVehiclesException(Exception):
@@ -39,47 +43,73 @@ def greedy_solver(
 
     depot = customers.pop(0)
 
-    customers = deque(
-        sorted(
-            customers,
-            key=lambda x: (
-                x.ready_time,
-                x.due_date,
-            )
-        )
+    customers = sorted(
+        customers,
+        key=lambda x: (
+            x.ready_time,
+            calculate_distance(x, depot),
+            x.due_date,
+        ),
+        reverse=True
     )
 
     solution: list[Route] = []
     while customers:
-        next_customer: Customer = customers.popleft()
+        # next_customer: Customer = customers.pop()
+        next_customer: Optional[Customer] = None
         route_time = 0
         route_capacity = 0
-        route: list[Customer] = [next_customer]
+        route: list[Customer] = [depot]
 
-        route_capacity += next_customer.demand
-        route_time += next_customer.service_time
-        while (
+        # route_capacity += next_customer.demand
+        # route_time += next_customer.service_time + math.ceil(calculate_distance(next_customer, route[-1]))
+        # route.append(next_customer)
+        while next_customer is None or (
                 customers
-                and route_time + next_customer.service_time <= depot.due_date
+                and route_time + next_customer.service_time + math.ceil(
+                    calculate_distance(next_customer, route[-1])
+                ) + math.ceil(
+                    calculate_distance(next_customer, depot)
+                ) <= depot.due_date
                 and route_capacity + next_customer.demand <= instance.vehicle_capacity
         ):
-            possible_next = [i for i in customers if i.ready_time >= route_time]
+            possible_next = sorted([
+                    i
+                    for i in customers
+                    if i.ready_time <= route_time + math.ceil(calculate_distance(next_customer, route[-1])) <= i.due_date
+                ],
+                key=lambda x: (
+                    depot.due_date - x.ready_time,
+                    calculate_distance(x, route[-1]),
+                    x.due_date,
+                ),
+                reverse=True
+            ) if next_customer else []
 
             if possible_next:
-                next_customer = possible_next[0]
+                next_customer = possible_next.pop()
                 customers.remove(next_customer)
             else:
-                next_customer = customers.popleft()
+                customers = sorted(
+                    customers,
+                    key=lambda x: (
+                        x.ready_time,
+                        calculate_distance(x, route[-1]),
+                        x.due_date,
+                    ),
+                    reverse=True
+                )
+                next_customer = customers.pop()
 
-            route.append(next_customer)
             route_capacity += next_customer.demand
-            route_time += next_customer.service_time
+            route_time += next_customer.service_time + math.ceil(calculate_distance(next_customer, route[-1]))
+            route.append(next_customer)
 
-        route = [depot] + route + [depot]
+        route = route + [depot]
         solution.append(Route(
             route,
             sum(calculate_distance(*i) for i in pairwise(route)),
-            sum(i.service_time for i in route),
+            sum(i.service_time for i in route) + sum(calculate_distance(*i) for i in pairwise(route)),
             sum(i.demand for i in route),
         ))
 

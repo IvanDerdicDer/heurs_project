@@ -13,5 +13,7 @@ def cost_function(
 
 
 instance = parse_instance("instances/inst1.TXT")
+depot = instance.customers[0]
 solution = greedy_solver(instance)
-pass
+assert len(instance.customers) - 1 == sum(len([j for j in i.route if j.number]) for i in solution.routes), f"Not all customers visited"
+assert all(i.time <= depot.due_date for i in solution.routes), f"Not all routes finish during working hours"
