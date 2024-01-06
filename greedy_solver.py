@@ -1,10 +1,9 @@
 import math
 from collections import deque
 from copy import copy
-from itertools import islice
-
-from instance_parser import Instance, parse_instance, Customer
 from dataclasses import dataclass
+
+from instance_parser import Instance, Customer
 
 
 @dataclass
@@ -28,7 +27,7 @@ class TooManyVehiclesException(Exception):
     pass
 
 
-def greedy_heuristic(
+def greedy_solver(
         instance: Instance
 ) -> Solution:
     customers = copy(instance.customers)
@@ -74,18 +73,3 @@ def greedy_heuristic(
         solution.append(Route(route))
 
     return Solution(solution)
-
-
-def main() -> None:
-    instance = parse_instance("instances/inst1.TXT")
-    solution = greedy_heuristic(instance)
-
-    s = 0
-    for i in solution.routes:
-        s += len(i.route)
-
-    print(s, len(instance.customers))
-
-
-if __name__ == "__main__":
-    main()
