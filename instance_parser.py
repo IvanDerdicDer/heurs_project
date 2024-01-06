@@ -32,7 +32,7 @@ def parse_instance(path: str) -> Instance:
     ]
 
     return Instance(
-        vehicle_count=vehicle_count,
-        vehicle_capacity=vehicle_capacity,
-        customers=customers
+        vehicle_count,
+        vehicle_capacity,
+        customers
     )
