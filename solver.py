@@ -19,7 +19,7 @@ def cost_function(
     return cost
 
 
-instance = parse_instance("instances/inst1.TXT")
+instance = parse_instance("instances/inst5.TXT")
 depot = instance.customers[0]
 solution = greedy_solver(instance)
 

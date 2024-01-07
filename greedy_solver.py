@@ -126,6 +126,8 @@ def greedy_solver(
             else:
                 customers.append(next_customer)
 
+        route_capacity += depot.demand
+        route_time += depot.service_time + math.ceil(calculate_distance(depot, route[-1].customer))
         route = route + [CustomerExtra(depot, route_time, route_capacity)]
         solution.append(Route(
             route,
