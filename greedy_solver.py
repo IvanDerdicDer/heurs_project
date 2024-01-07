@@ -9,8 +9,15 @@ from instance_parser import Instance, Customer
 
 
 @dataclass
+class CustomerExtra:
+    customer: Customer
+    time: int
+    capacity: int
+
+
+@dataclass
 class Route:
-    route: list[Customer]
+    route: list[CustomerExtra]
     distance: float
     time: int
     capacity: int
@@ -58,35 +65,33 @@ def greedy_solver(
         next_customer: Optional[Customer] = None
         route_time = 0
         route_capacity = 0
-        route: list[Customer] = [depot]
+        route: list[CustomerExtra] = [CustomerExtra(depot, 0, 0)]
 
-        # route_capacity += next_customer.demand
-        # route_time += next_customer.service_time + math.ceil(calculate_distance(next_customer, route[-1]))
-        # route.append(next_customer)
         while next_customer is None or (
                 customers
                 and route_time + next_customer.service_time + math.ceil(
-                    calculate_distance(next_customer, route[-1])
+                    calculate_distance(next_customer, route[-1].customer)
                 ) + math.ceil(
                     calculate_distance(next_customer, depot)
                 ) <= depot.due_date
                 and route_capacity + next_customer.demand <= instance.vehicle_capacity
         ):
             possible_next = sorted([
-                    i
-                    for i in customers
-                    if (
+                i
+                for i in customers
+                if (
                         i.ready_time
                         <= route_time
-                        + math.ceil(calculate_distance(next_customer, route[-1]))
+                        + math.ceil(calculate_distance(next_customer, route[-1].customer))
                         + next_customer.service_time
-                        + math.ceil(calculate_distance(i, route[-1]))
+                        + math.ceil(calculate_distance(i, route[-1].customer))
                         <= i.due_date
-                    )
-                ],
+                )
+            ],
                 key=lambda x: (
-                    depot.due_date - x.ready_time,
-                    calculate_distance(x, route[-1]),
+                    # depot.due_date - x.ready_time,
+                    x.ready_time,
+                    calculate_distance(x, route[-1].customer),
                     x.due_date,
                 ),
                 reverse=True
@@ -100,23 +105,33 @@ def greedy_solver(
                     customers,
                     key=lambda x: (
                         x.ready_time,
-                        calculate_distance(x, route[-1]),
+                        calculate_distance(x, route[-1].customer),
                         x.due_date,
                     ),
                     reverse=True
                 )
                 next_customer = customers.pop()
 
-            route_capacity += next_customer.demand
-            route_time += next_customer.service_time + math.ceil(calculate_distance(next_customer, route[-1]))
-            route.append(next_customer)
+            if (
+                    route_time + next_customer.service_time + math.ceil(
+                    calculate_distance(next_customer, route[-1].customer)
+                    ) + math.ceil(
+                        calculate_distance(next_customer, depot)
+                    ) <= depot.due_date
+                    and route_capacity + next_customer.demand <= instance.vehicle_capacity
+            ):
+                route_capacity += next_customer.demand
+                route_time += next_customer.service_time + math.ceil(calculate_distance(next_customer, route[-1].customer))
+                route.append(CustomerExtra(next_customer, route_time, route_capacity))
+            else:
+                customers.append(next_customer)
 
-        route = route + [depot]
+        route = route + [CustomerExtra(depot, route_time, route_capacity)]
         solution.append(Route(
             route,
-            sum(calculate_distance(*i) for i in pairwise(route)),
-            sum(i.service_time for i in route) + sum(calculate_distance(*i) for i in pairwise(route)),
-            sum(i.demand for i in route),
+            sum(calculate_distance(*i) for i in pairwise(j.customer for j in route)),
+            route_time,
+            route_capacity,
         ))
 
     return Solution(
