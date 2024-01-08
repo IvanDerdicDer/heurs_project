@@ -52,11 +52,11 @@ def greedy_solver(
     customers = sorted(
         customers,
         key=lambda x: (
-            x.ready_time,
-            calculate_distance(x, depot),
+            depot.due_date - x.ready_time,
             x.due_date,
+            calculate_distance(x, depot),
         ),
-        reverse=True
+        reverse=False
     )
 
     solution: list[Route] = []
@@ -90,10 +90,10 @@ def greedy_solver(
                 key=lambda x: (
                     # depot.due_date - x.ready_time,
                     x.ready_time,
-                    calculate_distance(x, route[-1].customer),
                     x.due_date,
+                    calculate_distance(x, route[-1].customer),
                 ),
-                reverse=True
+                reverse=False
             ) if next_customer else []
 
             if possible_next:
@@ -103,11 +103,11 @@ def greedy_solver(
                 customers = sorted(
                     customers,
                     key=lambda x: (
-                        x.ready_time,
-                        calculate_distance(x, route[-1].customer),
+                        depot.due_date - x.ready_time,
                         x.due_date,
+                        calculate_distance(x, route[-1].customer),
                     ),
-                    reverse=True
+                    reverse=False
                 )
                 next_customer = customers.pop()
 
@@ -121,7 +121,7 @@ def greedy_solver(
             ):
                 route_capacity += next_customer.demand
                 route_time += next_customer.service_time + math.ceil(calculate_distance(next_customer, route[-1].customer))
-                route.append(CustomerExtra(next_customer, route_time, route_capacity))
+                route.append(CustomerExtra(next_customer, route_time - next_customer.service_time, route_capacity))
             else:
                 customers.append(next_customer)
 
