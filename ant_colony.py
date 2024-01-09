@@ -4,7 +4,7 @@ from time import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import partial, cache
-from itertools import pairwise
+from itertools import pairwise, combinations
 from typing import Self, Iterable
 
 from instance_parser import Customer, Instance, parse_instance
@@ -137,7 +137,7 @@ def get_viable_next(
                 + math.ceil(calculate_distance(ant.path[0].customer, customer))
                 <= ant.path[0].customer.due_date
         )
-            and ant.capacity + customer.demand <= max_capacity
+                and ant.capacity + customer.demand <= max_capacity
         ):
             to_return.append(customer)
 
@@ -148,11 +148,14 @@ def get_viable_next(
 def customer_weight(
         start_customer: Customer,
         end_customer: Customer,
-        depot: Customer
+        depot: Customer,
+        max_distance: float
 ) -> float:
     return (
-            1 / calculate_distance(start_customer, end_customer)
-            + end_customer.service_time / depot.due_date
+            1 - calculate_distance(start_customer, end_customer) / max_distance
+            + end_customer.ready_time / depot.due_date
+            + 1 - (end_customer.due_date - end_customer.ready_time) / depot.due_date
+            + calculate_distance(depot, end_customer) / max_distance
     )
 
 
@@ -173,19 +176,28 @@ def ant_colony(
     depot = customers.pop(0)
     iteration_count = 0
 
+    max_distance = max(calculate_distance(*i) for i in combinations(customers, 2))
+
     start_time = time()
     solutions: list[Solution] = []
 
     while (
-            timeout_minutes
-            and time() - start_time <= timeout_minutes * 60
+            (
+                    timeout_minutes
+                    and time() - start_time <= timeout_minutes * 60
+            )
             or (
                     solutions
+                    and not timeout_minutes
                     and 0.9 <= (
                             cost_function(solutions[-1], instance) /
                             sum(cost_function(i, instance) for i in solutions)
                             / len(solutions)
                     ) <= 1.1
+            )
+            or (
+                    not solutions
+                    and not timeout_minutes
             )
     ):
         ants: list[Ant] = []
@@ -198,24 +210,18 @@ def ant_colony(
                 if not viable_next:
                     next_customer = depot
                 else:
-                    sample = [
-                        i
-                        for i in viable_next
-                        if random.random() <= (
-                                pheromones[(ant.path[-1].customer, i)] ** alpha
-                                * customer_weight(ant.path[-1].customer, i, depot) ** beta
-                                / sum(
-                            (pheromones[j] ** alpha * customer_weight(*j, depot) ** beta for j in pheromones.pheromones),
-                            start=1)
-                        )
-                    ]
-                    if not sample:
-                        sample = viable_next
-                    next_customers = random.sample(sample, 1)
-                    if not next_customers:
-                        next_customer = depot
-                    else:
-                        next_customer = next_customers[0]
+                    next_customer = max(viable_next, key=lambda i: (
+                            pheromones[(ant.path[-1].customer, i)] ** alpha
+                            * customer_weight(ant.path[-1].customer, i, depot, max_distance) ** beta
+                            / sum(
+                        (
+                            pheromones[(ant.path[-1].customer, j)] ** alpha
+                            * customer_weight(ant.path[-1].customer, j, depot, max_distance) ** beta
+                            for j in viable_next
+                        ),
+                        start=1
+                    )
+                    ))
 
                 if ant.path[-1].customer == next_customer and next_customer == depot:
                     break
@@ -238,6 +244,9 @@ def ant_colony(
         pheromones.evaporation().reinforce(solution)
         iteration_count += 1
 
+    print(f"{iteration_count = }")
+    print(f"timeout = {time() - start_time}")
+
     best_solution = max(solutions, key=partial(cost_function, instance=instance))
 
     customers_visited = sum(len(i.path) - 2 for i in best_solution.routes)
@@ -249,8 +258,8 @@ def ant_colony(
 
 
 def main() -> None:
-    instance = parse_instance("instances/inst1.TXT")
-    solution = ant_colony(instance, 1, alpha=1, beta=1, decay_rate=0.1)
+    instance = parse_instance("instances/inst2.TXT")
+    solution = ant_colony(instance, 1, alpha=1, beta=1.3, decay_rate=0.2)
     print(solution.pretty_str())
 
 
