@@ -103,7 +103,7 @@ def cost_function(
 
 @cache
 def reinforcement_function(cost: float) -> float:
-    return 2 * 1 / cost
+    return 1 / (1 - cost)
 
 
 @cache
@@ -147,11 +147,12 @@ def get_viable_next(
 @cache
 def customer_weight(
         start_customer: Customer,
-        end_customer: Customer
+        end_customer: Customer,
+        depot: Customer
 ) -> float:
     return (
-            calculate_distance(start_customer, end_customer)
-            + end_customer.service_time
+            1 / calculate_distance(start_customer, end_customer)
+            + end_customer.service_time / depot.due_date
     )
 
 
@@ -202,9 +203,9 @@ def ant_colony(
                         for i in viable_next
                         if random.random() <= (
                                 pheromones[(ant.path[-1].customer, i)] ** alpha
-                                * customer_weight(ant.path[-1].customer, i) ** beta
+                                * customer_weight(ant.path[-1].customer, i, depot) ** beta
                                 / sum(
-                            (pheromones[j] ** alpha * customer_weight(*j) ** beta for j in pheromones.pheromones),
+                            (pheromones[j] ** alpha * customer_weight(*j, depot) ** beta for j in pheromones.pheromones),
                             start=1)
                         )
                     ]
@@ -249,7 +250,7 @@ def ant_colony(
 
 def main() -> None:
     instance = parse_instance("instances/inst1.TXT")
-    solution = ant_colony(instance, 1, alpha=1, beta=1, decay_rate=0.3)
+    solution = ant_colony(instance, 1, alpha=1, beta=1, decay_rate=0.1)
     print(solution.pretty_str())
 
 
