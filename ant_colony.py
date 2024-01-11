@@ -261,7 +261,7 @@ def ant_colony(
 
 
 def main() -> None:
-    instance = parse_instance("instances/inst1.TXT")
+    instance = parse_instance("instances/inst5.TXT")
     solution = ant_colony(instance, 0, alpha=2, beta=1, decay_rate=0.5)
     print(solution.pretty_str())
 
