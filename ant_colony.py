@@ -257,12 +257,12 @@ def ant_colony(
 
     assert customers_total == customers_visited, f"Not all customers visited. {customers_visited}/{customers_total}"
 
-    return best_solution
+    return best_solution, iteration_count
 
 
 def main() -> None:
     instance = parse_instance("instances/inst1.TXT")
-    solution = ant_colony(instance, 1, alpha=2, beta=1, decay_rate=0.5)
+    solution, iteration_count = ant_colony(instance, 1, alpha=2, beta=1, decay_rate=0.5)
     print(solution.pretty_str())
 
 

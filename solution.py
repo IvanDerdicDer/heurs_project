@@ -13,14 +13,14 @@ def save_to_file(instance_number, timeout_minutes, solution):
 
 
 def main() -> None:
-    instance_range = range(5, 7)
+    instance_range = range(1, 7)
     timeout_variations = [1, 5, 0]
 
     for instance_number in instance_range:
         for timeout_minutes in timeout_variations:
             instance = parse_instance(f"instances/inst{instance_number}.TXT")
-            solution = ant_colony(instance, timeout_minutes, alpha=2, beta=1, decay_rate=0.5)
-            print(solution.pretty_str())
+            solution, iteration_count = ant_colony(instance, timeout_minutes, alpha=2, beta=1, decay_rate=0.5)
+            print(f"{instance_number}i-{timeout_minutes}m: {iteration_count}")
             save_to_file(instance_number, timeout_minutes, solution)
 
 
